@@ -4,6 +4,8 @@ from pollination.annual_daylight import AnnualDaylightEntryPoint
 from pollination.honeybee_radiance.post_process import AnnualDaylightEN17037Metrics
 from pollination.honeybee_radiance.schedule import EPWtoDaylightHours
 
+from pollination.honeybee_vtk.translate import Translate as TranslateVTKJS
+
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
 from pollination.alias.inputs.wea import wea_input_timestep_check
@@ -136,6 +138,23 @@ class AnnualDaylightEN17037EntryPoint(DAG):
                 'to': 'metrics'
             }
         ]
+
+    @task(template=TranslateVTKJS, needs=[calculate_annual_metrics_en17037])
+    def create_vtkjs(
+        self, hbjson_file=model, file_type='vtkjs', grid_options='meshes',
+        data='metrics'
+    ):
+        return [
+            {
+                'from': TranslateVTKJS()._outputs.output_file,
+                'to': 'visualization/en_173037_metrics.vtkjs'
+            }
+        ]
+
+    visualization = Outputs.file(
+        source='visualization/en_173037_metrics.vtkjs',
+        description='European metrics results visualization in 3D in vtkjs format.'
+    )
 
     results = Outputs.folder(
         source='results', description='Folder with raw result files (.ill) that '
