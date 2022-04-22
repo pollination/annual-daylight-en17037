@@ -1,6 +1,8 @@
 from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from dataclasses import dataclass
 from pollination.annual_daylight import AnnualDaylightEntryPoint
+from pollination.honeybee_radiance.post_process import AnnualDaylightEN17037Metrics
+from pollination.honeybee_radiance.schedule import EPWtoDaylightHours
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
@@ -10,7 +12,6 @@ from pollination.alias.inputs.radiancepar import rad_par_annual_input, \
     daylight_thresholds_input
 from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
-from pollination.alias.inputs.schedule import schedule_csv_input
 from pollination.alias.outputs.daylight import annual_daylight_results
 
 
@@ -74,10 +75,9 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=wea_input_timestep_check
     )
 
-    schedule = Inputs.file(
-        description='Path to an annual schedule file. Values should be 0-1 separated '
-        'by new line. If not provided an 8-5 annual schedule will be created.',
-        extensions=['txt', 'csv'], optional=True, alias=schedule_csv_input
+    epw = Inputs.file(
+        description='EPW file.',
+        extensions=['epw']
     )
 
     thresholds = Inputs.str(
@@ -92,12 +92,27 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     )
 
     @task(
-        template=AnnualDaylightEntryPoint, sub_folder='annual_daylight'
+        template=EPWtoDaylightHours
+    )
+    def create_daylight_hours(
+        self, epw=epw
+    ):
+        return [
+            {
+                'from': EPWtoDaylightHours()._outputs.daylight_hours,
+                'to': 'daylight_hours.csv'
+            }
+        ]
+
+    @task(
+        template=AnnualDaylightEntryPoint, sub_folder='annual_daylight',
+        needs=[create_daylight_hours]
     )
     def run_annual_daylight(
             self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
             radiance_parameters=radiance_parameters, grid_filter=grid_filter,
-            model=model, wea=wea, schedule=schedule, thresholds=thresholds
+            model=model, wea=wea, schedule=create_daylight_hours._outputs.daylight_hours,
+            thresholds=thresholds
         ):
         """Create sunpath for sun-up-hours."""
         return [
@@ -107,20 +122,20 @@ class AnnualDaylightEN17037EntryPoint(DAG):
              }
         ]
 
-    # TODO: Mikkel this one is for you to edit
-    # @task(
-    #     template=AnnualDaylightEN1703Metrics,
-    #     needs=[run_annual_daylight]
-    # )
-    # def calculate_annual_metrics(
-    #     self, folder='results', schedule=schedule, thresholds=thresholds
-    # ):
-    #     return [
-    #         {
-    #             'from': AnnualDaylightEN1703Metrics()._outputs.annual_metrics,
-    #             'to': 'metrics'
-    #         }
-    #     ]
+    @task(
+        template=AnnualDaylightEN17037Metrics,
+        needs=[create_daylight_hours, run_annual_daylight]
+    )
+    def calculate_annual_metrics_en17037(
+        self, folder=run_annual_daylight._outputs.results,
+        schedule=create_daylight_hours._outputs.daylight_hours
+    ):
+        return [
+            {
+                'from': AnnualDaylightEN17037Metrics()._outputs.annual_en17037_metrics,
+                'to': 'metrics'
+            }
+        ]
 
     results = Outputs.folder(
         source='results', description='Folder with raw result files (.ill) that '
@@ -128,6 +143,6 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=annual_daylight_results
     )
 
-    # metrics = Outputs.folder(
-    #     source='metrics', description='Annual metrics folder.'
-    # )
+    metrics = Outputs.folder(
+        source='metrics', description='Annual EN 173037 metrics folder.'
+    )
