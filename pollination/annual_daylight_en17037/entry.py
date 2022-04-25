@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from pollination.annual_daylight import AnnualDaylightEntryPoint
 from pollination.honeybee_radiance.post_process import AnnualDaylightEN17037Metrics
 from pollination.honeybee_radiance.schedule import EPWtoDaylightHours
+from pollination.ladybug.translate import EpwToWea
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
-from pollination.alias.inputs.wea import wea_input_timestep_check
 from pollination.alias.inputs.north import north_input
 from pollination.alias.inputs.radiancepar import rad_par_annual_input, \
     daylight_thresholds_input
@@ -69,12 +69,6 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=hbjson_model_grid_input
     )
 
-    wea = Inputs.file(
-        description='Wea file.',
-        extensions=['wea'],
-        alias=wea_input_timestep_check
-    )
-
     epw = Inputs.file(
         description='EPW file.',
         extensions=['epw']
@@ -105,14 +99,27 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         ]
 
     @task(
+        template=EpwToWea
+    )
+    def create_wea(
+        self, epw=epw
+    ):
+        return [
+            {
+                'from': EpwToWea()._outputs.wea,
+                'to': 'wea.wea'
+            }
+        ]
+
+    @task(
         template=AnnualDaylightEntryPoint, sub_folder='annual_daylight',
-        needs=[create_daylight_hours]
+        needs=[create_daylight_hours, create_wea]
     )
     def run_annual_daylight(
             self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
             radiance_parameters=radiance_parameters, grid_filter=grid_filter,
-            model=model, wea=wea, schedule=create_daylight_hours._outputs.daylight_hours,
-            thresholds=thresholds
+            model=model, wea=create_wea._outputs.wea,
+            schedule=create_daylight_hours._outputs.daylight_hours, thresholds=thresholds
         ):
         """Create sunpath for sun-up-hours."""
         return [
