@@ -1,7 +1,7 @@
 from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from dataclasses import dataclass
-from pollination.annual_daylight import AnnualDaylightEntryPoint
-from pollination.honeybee_radiance.post_process import AnnualDaylightEN17037Metrics
+from pollination.two_phase_daylight_coefficient import TwoPhaseDaylightCoefficientEntryPoint
+from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEN17037Metrics
 from pollination.honeybee_radiance.schedule import EPWtoDaylightHours
 from pollination.ladybug.translate import EpwToWea
 
@@ -112,29 +112,22 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         ]
 
     @task(
-        template=AnnualDaylightEntryPoint, sub_folder='annual_daylight',
+        template=TwoPhaseDaylightCoefficientEntryPoint,
         needs=[create_daylight_hours, create_wea]
     )
-    def run_annual_daylight(
+    def run_two_phase_daylight_coefficient(
             self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
             radiance_parameters=radiance_parameters, grid_filter=grid_filter,
-            model=model, wea=create_wea._outputs.wea,
-            schedule=create_daylight_hours._outputs.daylight_hours, thresholds=thresholds
-        ):
-        """Create sunpath for sun-up-hours."""
-        return [
-            {
-                'from': AnnualDaylightEntryPoint()._outputs.results,
-                'to': '../results'
-             }
-        ]
+            model=model, wea=create_wea._outputs.wea
+    ):
+        pass
 
     @task(
         template=AnnualDaylightEN17037Metrics,
-        needs=[create_daylight_hours, run_annual_daylight]
+        needs=[create_daylight_hours, run_two_phase_daylight_coefficient]
     )
     def calculate_annual_metrics_en17037(
-        self, folder=run_annual_daylight._outputs.results,
+        self, folder='results',
         schedule=create_daylight_hours._outputs.daylight_hours
     ):
         return [
