@@ -14,6 +14,8 @@ from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
 from pollination.alias.outputs.daylight import annual_daylight_results
 
+from ._postprocess import AnnualDaylightEN17037PostProcess
+
 
 @dataclass
 class AnnualDaylightEN17037EntryPoint(DAG):
@@ -123,16 +125,21 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         pass
 
     @task(
-        template=AnnualDaylightEN17037Metrics,
+        template=AnnualDaylightEN17037PostProcess,
         needs=[create_daylight_hours, run_two_phase_daylight_coefficient]
     )
-    def calculate_annual_metrics_en17037(
-        self, folder='results',
-        schedule=create_daylight_hours._outputs.daylight_hours
+    def annual_metrics_en17037_postprocess(
+        self, results='results',
+        schedule=create_daylight_hours._outputs.daylight_hours,
+        thresholds=thresholds
     ):
         return [
             {
-                'from': AnnualDaylightEN17037Metrics()._outputs.annual_en17037_metrics,
+                'from': AnnualDaylightEN17037PostProcess()._outputs.en17037,
+                'to': 'en17037'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.metrics,
                 'to': 'metrics'
             }
         ]
@@ -143,6 +150,12 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=annual_daylight_results
     )
 
+    en17037 = Outputs.folder(
+        source='en17037', description='Annual daylight EN17037 metrics folder.'
+    )
+
     metrics = Outputs.folder(
-        source='metrics', description='Annual EN 173037 metrics folder.'
+        source='metrics', description='Annual daylight metrics folder. These '
+        'metrics are the usual annual daylight metrics with the daylight '
+        'hours occupancy schedule.'
     )
