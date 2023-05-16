@@ -1,6 +1,7 @@
 from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from dataclasses import dataclass
 from pollination.two_phase_daylight_coefficient import TwoPhaseDaylightCoefficientEntryPoint
+from pollination.honeybee_display.translate import ModelToVis
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
@@ -131,6 +132,52 @@ class AnnualDaylightEN17037EntryPoint(DAG):
                 'to': 'metrics'
             }
         ]
+
+    @task(
+        template=ModelToVis,
+        needs=[annual_metrics_en17037_postprocess],
+        sub_paths={
+            'grid_data': 'da'
+        })
+    def create_vsf_en17037(
+        self, model=model, grid_data='en17037',
+        active_grid_data='target_illuminance_300', output_format='vsf'
+    ):
+        return [
+            {
+                'from': ModelToVis()._outputs.output_file,
+                'to': 'visualization_en17037.vsf'
+            }
+        ]
+
+    @task(template=ModelToVis, needs=[annual_metrics_en17037_postprocess])
+    def create_vsf_metrics(
+        self, model=model, grid_data='metrics', active_grid_data='udi',
+        output_format='vsf'
+    ):
+        return [
+            {
+                'from': ModelToVis()._outputs.output_file,
+                'to': 'visualization_metrics.vsf'
+            }
+        ]
+
+    visualization_en17037 = Outputs.file(
+        source='visualization_en17037.vsf',
+        description='Annual daylight EN17037 result visualization in '
+        'VisualizationSet format.'
+    )
+
+    visualization_metrics = Outputs.file(
+        source='visualization_metrics.vsf',
+        description='Annual daylight result visualization in VisualizationSet format.'
+    )
+
+    results = Outputs.folder(
+        source='results', description='Folder with raw result files (.ill) that '
+        'contain illuminance matrices for each sensor at each timestep of the analysis.',
+        alias=annual_daylight_results
+    )
 
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
