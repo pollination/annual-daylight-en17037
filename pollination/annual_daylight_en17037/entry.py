@@ -14,6 +14,7 @@ from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
 from pollination.alias.outputs.daylight import annual_daylight_results
 
+from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
 
 
@@ -42,8 +43,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         'redistributing the sensors based on cpu_count. This value takes '
         'precedence over the cpu_count and can be used to ensure that '
         'the parallelization does not result in generating unnecessarily small '
-        'sensor grids. The default value is set to 1, which means that the '
-        'cpu_count is always respected.', default=1,
+        'sensor grids.', default=500,
         spec={'type': 'integer', 'minimum': 1},
         alias=min_sensor_count_input
     )
@@ -87,50 +87,39 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=daylight_thresholds_input
     )
 
-    @task(
-        template=EPWtoDaylightHours
-    )
-    def create_daylight_hours(
+    @task(template=AnnualDaylightEN17037ProcessEPW)
+    def annual_metrics_en17037_process_epw(
         self, epw=epw
     ):
         return [
             {
-                'from': EPWtoDaylightHours()._outputs.daylight_hours,
+                'from': AnnualDaylightEN17037ProcessEPW()._outputs.wea,
+                'to': 'wea.wea'
+            },
+            {
+                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours,
                 'to': 'daylight_hours.csv'
             }
         ]
 
     @task(
-        template=EpwToWea
-    )
-    def create_wea(
-        self, epw=epw
-    ):
-        return [
-            {
-                'from': EpwToWea()._outputs.wea,
-                'to': 'wea.wea'
-            }
-        ]
-
-    @task(
         template=TwoPhaseDaylightCoefficientEntryPoint,
-        needs=[create_daylight_hours, create_wea]
+        needs=[annual_metrics_en17037_process_epw]
     )
     def run_two_phase_daylight_coefficient(
             self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
             radiance_parameters=radiance_parameters, grid_filter=grid_filter,
-            model=model, wea=create_wea._outputs.wea
+            model=model, wea=annual_metrics_en17037_process_epw._outputs.wea
     ):
         pass
 
     @task(
         template=AnnualDaylightEN17037PostProcess,
-        needs=[create_daylight_hours, run_two_phase_daylight_coefficient]
+        needs=[annual_metrics_en17037_process_epw, run_two_phase_daylight_coefficient]
     )
     def annual_metrics_en17037_postprocess(
         self, results='results',
-        schedule=create_daylight_hours._outputs.daylight_hours,
+        schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
         thresholds=thresholds
     ):
         return [
