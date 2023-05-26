@@ -1,6 +1,6 @@
 from pollination_dsl.dag import Inputs, GroupedDAG, task, Outputs
 from dataclasses import dataclass
-from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEN17037Metrics
+from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEn17037Metrics
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightMetrics
 
 # input/output alias
@@ -34,13 +34,13 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
         alias=daylight_thresholds_input
     )
 
-    @task(template=AnnualDaylightEN17037Metrics)
+    @task(template=AnnualDaylightEn17037Metrics)
     def calculate_annual_metrics_en17037(
         self, folder=results, schedule=schedule
     ):
         return [
             {
-                'from': AnnualDaylightEN17037Metrics()._outputs.annual_en17037_metrics,
+                'from': AnnualDaylightEn17037Metrics()._outputs.annual_en17037_metrics,
                 'to': 'en17037'
             }
         ]
