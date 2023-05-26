@@ -9,7 +9,9 @@ from pollination.alias.inputs.radiancepar import rad_par_annual_input, \
     daylight_thresholds_input
 from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
-from pollination.alias.outputs.daylight import annual_daylight_results
+from pollination.alias.outputs.daylight import annual_daylight_results, \
+    daylight_autonomy_results, continuous_daylight_autonomy_results, \
+    udi_results, udi_lower_results, udi_upper_results
 
 from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
@@ -144,4 +146,31 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         source='metrics', description='Annual daylight metrics folder. These '
         'metrics are the usual annual daylight metrics with the daylight '
         'hours occupancy schedule.'
+    )
+
+    da = Outputs.folder(
+        source='metrics/da', description='Daylight autonomy results.',
+        alias=daylight_autonomy_results
+    )
+
+    cda = Outputs.folder(
+        source='metrics/cda', description='Continuous daylight autonomy results.',
+        alias=continuous_daylight_autonomy_results
+    )
+
+    udi = Outputs.folder(
+        source='metrics/udi', description='Useful daylight illuminance results.',
+        alias=udi_results
+    )
+
+    udi_lower = Outputs.folder(
+        source='metrics/udi_lower', description='Results for the percent of time that '
+        'is below the lower threshold of useful daylight illuminance.',
+        alias=udi_lower_results
+    )
+
+    udi_upper = Outputs.folder(
+        source='metrics/udi_upper', description='Results for the percent of time that '
+        'is above the upper threshold of useful daylight illuminance.',
+        alias=udi_upper_results
     )
