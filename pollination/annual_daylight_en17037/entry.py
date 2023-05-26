@@ -133,23 +133,6 @@ class AnnualDaylightEN17037EntryPoint(DAG):
             }
         ]
 
-    @task(
-        template=ModelToVis,
-        needs=[annual_metrics_en17037_postprocess],
-        sub_paths={
-            'grid_data': 'da'
-        })
-    def create_vsf_en17037(
-        self, model=model, grid_data='en17037',
-        active_grid_data='target_illuminance_300', output_format='vsf'
-    ):
-        return [
-            {
-                'from': ModelToVis()._outputs.output_file,
-                'to': 'visualization_en17037.vsf'
-            }
-        ]
-
     @task(template=ModelToVis, needs=[annual_metrics_en17037_postprocess])
     def create_vsf_metrics(
         self, model=model, grid_data='metrics', active_grid_data='udi',
@@ -161,12 +144,6 @@ class AnnualDaylightEN17037EntryPoint(DAG):
                 'to': 'visualization_metrics.vsf'
             }
         ]
-
-    visualization_en17037 = Outputs.file(
-        source='visualization_en17037.vsf',
-        description='Annual daylight EN17037 result visualization in '
-        'VisualizationSet format.'
-    )
 
     visualization_metrics = Outputs.file(
         source='visualization_metrics.vsf',

@@ -2,7 +2,6 @@ from pollination_dsl.dag import Inputs, GroupedDAG, task, Outputs
 from dataclasses import dataclass
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEn17037Metrics
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightMetrics
-from pollination.honeybee_display.translate import ModelToVis
 
 # input/output alias
 from pollination.alias.inputs.radiancepar import daylight_thresholds_input
