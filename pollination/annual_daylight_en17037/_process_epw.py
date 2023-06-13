@@ -14,9 +14,7 @@ class AnnualDaylightEN17037ProcessEPW(GroupedDAG):
         extensions=['epw']
     )
 
-    @task(
-        template=EPWtoDaylightHours
-    )
+    @task(template=EPWtoDaylightHours)
     def create_daylight_hours(
         self, epw=epw
     ):
@@ -27,9 +25,7 @@ class AnnualDaylightEN17037ProcessEPW(GroupedDAG):
             }
         ]
 
-    @task(
-        template=EpwToWea
-    )
+    @task(template=EpwToWea)
     def create_wea(
         self, epw=epw
     ):
