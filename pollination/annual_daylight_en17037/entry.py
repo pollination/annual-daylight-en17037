@@ -132,12 +132,6 @@ class AnnualDaylightEN17037EntryPoint(DAG):
             }
         ]
 
-    results = Outputs.folder(
-        source='results', description='Folder with raw result files (.ill) that '
-        'contain illuminance matrices for each sensor at each timestep of the analysis.',
-        alias=annual_daylight_results
-    )
-
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
     )

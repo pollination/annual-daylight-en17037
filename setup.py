@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -12,9 +13,38 @@ with open('extras-requirements.txt') as f:
     extras_requirements = f.read().splitlines()
     extras_requirements = [req.replace('==', '>=') for req in extras_requirements]
 
+
+# read branch input and remove it from sys.argv
+if '--branch' in sys.argv:
+    index = sys.argv.index('--branch')
+    sys.argv.pop(index)
+    branch = sys.argv.pop(index)
+else:
+    branch = 'master'
+
+name = 'pollination-annual-daylight-en17037'
+if branch == 'viz':
+    name = f'{name}.viz'
+elif branch == 'full':
+    name = f'{name}.full'
+
+
+def _clean_version():
+    """Make sure the version will not be a local version."""
+
+    def get_version(version):
+        tag = str(version.tag)
+        return tag
+
+    def empty(version):
+        return ''
+
+    return {'local_scheme': get_version, 'version_scheme': empty}
+
+
 # normal setuptool inputs
 setuptools.setup(
-    name='pollination-annual-daylight-en17037',                                     # will be used for package name unless it is overwritten using __queenbee__ info.
+    name=name,                                     # will be used for package name unless it is overwritten using __queenbee__ info.
     author='ladybug-tools',                                                 # the owner account for this package - required if pushed to Pollination
     author_email='info@ladybug.tools',
     packages=setuptools.find_namespace_packages(                            # required - that's how pollination find the package
@@ -22,7 +52,7 @@ setuptools.setup(
     ),
     install_requires=requirements,
     extras_require={'viz': extras_requirements},
-    use_scm_version=True,
+    use_scm_version=_clean_version,
     setup_requires=['setuptools_scm'],
     url='https://github.com/pollination/annual-daylight-en17037',                   # will be translated to home
     project_urls={
