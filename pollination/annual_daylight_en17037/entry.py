@@ -139,7 +139,8 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     metrics = Outputs.folder(
         source='metrics', description='Annual daylight metrics folder. These '
         'metrics are the usual annual daylight metrics with the daylight '
-        'hours occupancy schedule.'
+        'hours occupancy schedule.',
+        alias=annual_daylight_results
     )
 
     da = Outputs.folder(
