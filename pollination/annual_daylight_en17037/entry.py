@@ -15,7 +15,7 @@ from pollination.alias.inputs.postprocess import grid_metrics_input
 from pollination.alias.outputs.daylight import daylight_autonomy_results, \
     continuous_daylight_autonomy_results, udi_results, udi_lower_results, \
     udi_upper_results, grid_metrics_results, en17037_summary, en17037_summary_grid, \
-    daylight_hours
+    daylight_hours, annual_daylight_results
 
 from ._postprocess import AnnualDaylightEN17037PostProcess
 
@@ -177,6 +177,12 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     visualization_metrics = Outputs.file(
         source='visualization_metrics.vsf',
         description='Annual daylight result visualization in VisualizationSet format.'
+    )
+
+    results = Outputs.folder(
+        source='results', description='Folder with raw result files (.ill) that '
+        'contain illuminance matrices for each sensor at each timestep of the analysis.',
+        alias=annual_daylight_results
     )
 
     en17037 = Outputs.folder(
