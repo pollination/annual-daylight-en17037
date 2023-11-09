@@ -12,7 +12,7 @@ from pollination.alias.inputs.grid import grid_filter_input, \
 from pollination.alias.inputs.postprocess import grid_metrics_input
 from pollination.alias.outputs.daylight import daylight_autonomy_results, \
     continuous_daylight_autonomy_results, udi_results, udi_lower_results, \
-    udi_upper_results, grid_metrics_results
+    udi_upper_results, grid_metrics_results, annual_daylight_results
 
 from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
@@ -125,7 +125,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         needs=[annual_metrics_en17037_process_epw, run_two_phase_daylight_coefficient]
     )
     def annual_metrics_en17037_postprocess(
-        self, model=model, results='results',
+        self, results='results',
         schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
         thresholds=thresholds, model=model, grid_metrics=grid_metrics
     ):
@@ -161,6 +161,12 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     visualization_metrics = Outputs.file(
         source='visualization_metrics.vsf',
         description='Annual daylight result visualization in VisualizationSet format.'
+    )
+
+    results = Outputs.folder(
+        source='results', description='Folder with raw result files (.ill) that '
+        'contain illuminance matrices for each sensor at each timestep of the analysis.',
+        alias=annual_daylight_results
     )
 
     en17037 = Outputs.folder(
