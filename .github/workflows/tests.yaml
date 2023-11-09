@@ -21,6 +21,6 @@ jobs:
       - name: install python dependencies
         run: |
           pip install -r dev-requirements.txt
-          pip install .
+          pip install .[viz]
       - name: run tests
         run: python -m pytest tests/
