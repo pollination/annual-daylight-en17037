@@ -119,7 +119,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         needs=[annual_metrics_en17037_process_epw, run_two_phase_daylight_coefficient]
     )
     def annual_metrics_en17037_postprocess(
-        self, results='results',
+        self, model=model, results='results',
         schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
         thresholds=thresholds
     ):
@@ -131,8 +131,27 @@ class AnnualDaylightEN17037EntryPoint(DAG):
             {
                 'from': AnnualDaylightEN17037PostProcess()._outputs.metrics,
                 'to': 'metrics'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.visualization_en17037,
+                'to': 'visualization_en17037.vsf'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.visualization_metrics,
+                'to': 'visualization_metrics.vsf'
             }
         ]
+
+    visualization_en17037 = Outputs.file(
+        source='visualization_en17037.vsf',
+        description='Annual daylight EN17037 result visualization in '
+        'VisualizationSet format.'
+    )
+
+    visualization_metrics = Outputs.file(
+        source='visualization_metrics.vsf',
+        description='Annual daylight result visualization in VisualizationSet format.'
+    )
 
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
