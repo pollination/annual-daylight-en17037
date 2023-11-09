@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEn17037Metrics
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightMetrics
 from pollination.honeybee_radiance_postprocess.post_process import GridSummaryMetrics
+from pollination.honeybee_display.translate import ModelToVis
 
 # input/output alias
 from pollination.alias.inputs.radiancepar import daylight_thresholds_input
@@ -83,6 +84,37 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
             }
         ]
 
+    @task(
+        template=ModelToVis,
+        needs=[calculate_annual_metrics_en17037],
+        sub_paths={
+            'grid_data': 'da'
+        }
+    )
+    def create_vsf_en17037(
+        self, model=model,
+        grid_data=calculate_annual_metrics_en17037._outputs.annual_en17037_metrics,
+        active_grid_data='target_illuminance_300', output_format='vsf'
+    ):
+        return [
+            {
+                'from': ModelToVis()._outputs.output_file,
+                'to': 'visualization_en17037.vsf'
+            }
+        ]
+
+    @task(template=ModelToVis, needs=[calculate_annual_metrics])
+    def create_vsf_metrics(
+        self, model=model, grid_data=calculate_annual_metrics._outputs.annual_metrics,
+        active_grid_data='udi', output_format='vsf'
+    ):
+        return [
+            {
+                'from': ModelToVis()._outputs.output_file,
+                'to': 'visualization_metrics.vsf'
+            }
+        ]
+
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
     )
@@ -95,4 +127,15 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
 
     grid_summary = Outputs.file(
         source='grid_summary.csv', description='grid summary.'
+    )
+
+    visualization_en17037 = Outputs.file(
+        source='visualization_en17037.vsf',
+        description='Annual daylight EN17037 result visualization in '
+        'VisualizationSet format.'
+    )
+
+    visualization_metrics = Outputs.file(
+        source='visualization_metrics.vsf',
+        description='Annual daylight result visualization in VisualizationSet format.'
     )

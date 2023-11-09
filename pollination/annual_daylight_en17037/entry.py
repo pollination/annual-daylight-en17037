@@ -141,8 +141,27 @@ class AnnualDaylightEN17037EntryPoint(DAG):
             {
                 'from': AnnualDaylightEN17037PostProcess()._outputs.grid_summary,
                 'to': 'grid_summary.csv'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.visualization_en17037,
+                'to': 'visualization_en17037.vsf'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.visualization_metrics,
+                'to': 'visualization_metrics.vsf'
             }
         ]
+
+    visualization_en17037 = Outputs.file(
+        source='visualization_en17037.vsf',
+        description='Annual daylight EN17037 result visualization in '
+        'VisualizationSet format.'
+    )
+
+    visualization_metrics = Outputs.file(
+        source='visualization_metrics.vsf',
+        description='Annual daylight result visualization in VisualizationSet format.'
+    )
 
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
