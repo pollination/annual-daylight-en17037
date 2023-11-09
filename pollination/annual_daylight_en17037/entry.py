@@ -125,7 +125,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         needs=[annual_metrics_en17037_process_epw, run_two_phase_daylight_coefficient]
     )
     def annual_metrics_en17037_postprocess(
-        self, results='results',
+        self, model=model, results='results',
         schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
         thresholds=thresholds, model=model, grid_metrics=grid_metrics
     ):
