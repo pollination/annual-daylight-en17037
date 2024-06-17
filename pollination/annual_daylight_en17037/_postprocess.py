@@ -2,6 +2,7 @@ from pollination_dsl.dag import Inputs, GroupedDAG, task, Outputs
 from dataclasses import dataclass
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightEn17037Metrics
 from pollination.honeybee_radiance_postprocess.post_process import AnnualDaylightMetrics
+from pollination.honeybee_radiance_postprocess.post_process import GridSummaryMetrics
 
 # input/output alias
 from pollination.alias.inputs.radiancepar import daylight_thresholds_input
@@ -13,6 +14,11 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
     """Annual daylight EN17037 post-process."""
 
     # inputs
+    model = Inputs.file(
+        description='Input Honeybee model.',
+        extensions=['json', 'hbjson', 'pkl', 'hbpkl', 'zip']
+    )
+
     results = Inputs.folder(
         description='Annual daylight results folder.'
     )
@@ -32,6 +38,11 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
         'want to change the upper threshold to 2000 lux you should use -ut 2000 as '
         'the input.', default='-t 300 -lt 100 -ut 3000',
         alias=daylight_thresholds_input
+    )
+
+    grid_metrics = Inputs.file(
+        description='A JSON file with additional custom metrics to calculate.',
+        path='grid_metrics.json', optional=True
     )
 
     @task(template=AnnualDaylightEn17037Metrics)
@@ -56,6 +67,22 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
             }
         ]
 
+    @task(
+        template=GridSummaryMetrics,
+        needs=[calculate_annual_metrics]
+    )
+    def grid_summary_metrics(
+        self, folder=calculate_annual_metrics._outputs.annual_metrics,
+        model=model, grid_metrics=grid_metrics,
+        folder_level='sub-folder'
+    ):
+        return [
+            {
+                'from': GridSummaryMetrics()._outputs.grid_summary,
+                'to': 'grid_summary.csv'
+            }
+        ]
+
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
     )
@@ -64,4 +91,8 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
         source='metrics', description='Annual daylight metrics folder. These '
         'metrics are the usual annual daylight metrics with the daylight '
         'hours occupancy schedule.'
+    )
+
+    grid_summary = Outputs.file(
+        source='grid_summary.csv', description='grid summary.'
     )
