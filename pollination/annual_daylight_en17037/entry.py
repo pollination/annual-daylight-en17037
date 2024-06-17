@@ -9,9 +9,10 @@ from pollination.alias.inputs.radiancepar import rad_par_annual_input, \
     daylight_thresholds_input
 from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
-from pollination.alias.outputs.daylight import annual_daylight_results, \
-    daylight_autonomy_results, continuous_daylight_autonomy_results, \
-    udi_results, udi_lower_results, udi_upper_results
+from pollination.alias.inputs.postprocess import grid_metrics_input
+from pollination.alias.outputs.daylight import daylight_autonomy_results, \
+    continuous_daylight_autonomy_results, udi_results, udi_lower_results, \
+    udi_upper_results, grid_metrics_results
 
 from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
@@ -88,6 +89,11 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         alias=daylight_thresholds_input
     )
 
+    grid_metrics = Inputs.file(
+        description='A JSON file with additional custom metrics to calculate.',
+        extensions=['json'], optional=True, alias=grid_metrics_input
+    )
+
     @task(template=AnnualDaylightEN17037ProcessEPW)
     def annual_metrics_en17037_process_epw(
         self, epw=epw
@@ -121,7 +127,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     def annual_metrics_en17037_postprocess(
         self, results='results',
         schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
-        thresholds=thresholds
+        thresholds=thresholds, model=model, grid_metrics=grid_metrics
     ):
         return [
             {
@@ -131,6 +137,10 @@ class AnnualDaylightEN17037EntryPoint(DAG):
             {
                 'from': AnnualDaylightEN17037PostProcess()._outputs.metrics,
                 'to': 'metrics'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.grid_summary,
+                'to': 'grid_summary.csv'
             }
         ]
 
@@ -142,6 +152,11 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         source='metrics', description='Annual daylight metrics folder. These '
         'metrics are the usual annual daylight metrics with the daylight '
         'hours occupancy schedule.'
+    )
+
+    grid_summary = Outputs.file(
+        source='grid_summary.csv', description='Grid summary of metrics.',
+        alias=grid_metrics_results
     )
 
     da = Outputs.folder(
