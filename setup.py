@@ -39,7 +39,7 @@ def _clean_version():
     def empty(version):
         return ''
 
-    return {'local_scheme': get_version, 'version_scheme': empty}
+    return {'local_scheme': empty, 'version_scheme': get_version}
 
 
 # normal setuptool inputs
