@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import sys
 import setuptools
 
@@ -20,7 +21,7 @@ if '--branch' in sys.argv:
     sys.argv.pop(index)
     branch = sys.argv.pop(index)
 else:
-    branch = 'master'
+    branch = os.environ.get('BRANCH', 'master')
 
 name = 'pollination-annual-daylight-en17037'
 if branch == 'viz':
