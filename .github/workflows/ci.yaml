@@ -50,7 +50,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: install python dependencies
-        run: pip install .
+        run: |
+          pip install -r dev-requirements.txt
+          pip install .
       - name: deploy to staging
         run: |
           queenbee
