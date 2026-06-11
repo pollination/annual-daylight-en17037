@@ -76,6 +76,10 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
+      - name: set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
       - name: rebase ${{ matrix.branch }} branch
         run: |
           git config --global user.email "ci@pollination.solutions"
@@ -161,13 +165,19 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
+      - name: set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
       - name: rebase ${{ matrix.branch }} branch
         run: |
             git config --global user.email "ci@pollination.solutions"
             git config --global user.name "GitHub Actions"
             git rebase origin/production
       - name: install python viz dependencies
-        run: pip install .[viz]
+        run: |
+          pip install -r dev-requirements.txt
+          pip install .[viz]
       - name: deploy  ${{ matrix.branch }} to production
         env:
           TAG: ${{ needs.deploy-to-production.outputs.tag }}
