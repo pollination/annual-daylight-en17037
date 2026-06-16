@@ -57,7 +57,7 @@ setuptools.setup(
     setup_requires=['setuptools_scm'],
     url='https://github.com/pollination/annual-daylight-en17037',                   # will be translated to home
     project_urls={
-        'icon': 'https://raw.githubusercontent.com/ladybug-tools/artwork/master/icons_components/honeybee/png/annualrecipe.png',
+        'icon': 'https://raw.githubusercontent.com/ladybug-tools/artwork/master/icons_components/honeybee/png/en17037.png',
         'docker': 'https://hub.docker.com/r/ladybugtools/honeybee-radiance'
     },
     description='Annual daylight EN17037 recipe for Pollination.',                  # will be used as package description
