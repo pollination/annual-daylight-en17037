@@ -134,8 +134,8 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: install python dependencies
         run: |
+          pip install -r dev-requirements.txt
           pip install pollination-annual-daylight-en17037
-          pip install -r requirements.txt
       - name: deploy to production
         run: |
           TAG=$(echo "${TAG:?}" | sed 's/[[:space:]]//g')
