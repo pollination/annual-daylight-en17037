@@ -1,2 +1,2 @@
-pollination-two-phase-daylight-coefficient==1.1.65
+pollination-two-phase-daylight-coefficient==1.1.68
 pollination-ladybug==0.2.2

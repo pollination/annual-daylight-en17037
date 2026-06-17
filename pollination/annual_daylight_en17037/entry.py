@@ -12,8 +12,8 @@ from pollination.alias.inputs.grid import grid_filter_input, \
 from pollination.alias.inputs.postprocess import grid_metrics_input
 from pollination.alias.outputs.daylight import daylight_autonomy_results, \
     continuous_daylight_autonomy_results, udi_results, udi_lower_results, \
-    udi_upper_results, grid_metrics_results, annual_daylight_results, \
-    en17037_summary
+    udi_upper_results, grid_metrics_results, en17037_summary, \
+    daylight_hours
 
 from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
@@ -105,8 +105,12 @@ class AnnualDaylightEN17037EntryPoint(DAG):
                 'to': 'wea.wea'
             },
             {
-                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours,
+                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours_csv,
                 'to': 'daylight_hours.csv'
+            },
+            {
+                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours_json,
+                'to': 'daylight_hours.json'
             }
         ]
 
@@ -127,7 +131,7 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     )
     def annual_metrics_en17037_postprocess(
         self, results='results',
-        schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours,
+        schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours_csv,
         thresholds=thresholds, model=model, grid_metrics=grid_metrics
     ):
         return [
@@ -155,7 +159,8 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     )
 
     daylight_hours = Outputs.file(
-        source='daylight_hours.csv', description='Daylight hours occupancy schedule.'
+        source='daylight_hours.json', description='Daylight hours occupancy schedule.',
+        alias=daylight_hours
     )
 
     metrics = Outputs.folder(

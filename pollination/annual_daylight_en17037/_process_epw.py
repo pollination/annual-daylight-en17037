@@ -20,8 +20,12 @@ class AnnualDaylightEN17037ProcessEPW(GroupedDAG):
     ):
         return [
             {
-                'from': EPWtoDaylightHours()._outputs.daylight_hours,
+                'from': EPWtoDaylightHours()._outputs.daylight_hours_csv,
                 'to': 'daylight_hours.csv'
+            },
+            {
+                'from': EPWtoDaylightHours()._outputs.daylight_hours_json,
+                'to': 'daylight_hours.json'
             }
         ]
 
@@ -40,7 +44,12 @@ class AnnualDaylightEN17037ProcessEPW(GroupedDAG):
         source='wea.wea', description='A wea file generated from the input epw.'
     )
 
-    daylight_hours = Outputs.file(
+    daylight_hours_csv = Outputs.file(
         source='daylight_hours.csv', description='Path to daylight hours '
+        'schedule.'
+    )
+
+    daylight_hours_json = Outputs.file(
+        source='daylight_hours.json', description='Path to daylight hours '
         'schedule.'
     )
