@@ -1,9 +1,11 @@
 from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from dataclasses import dataclass
 from pollination.two_phase_daylight_coefficient import TwoPhaseDaylightCoefficientEntryPoint
+from pollination.honeybee_radiance.schedule import EPWtoDaylightHours
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
+from pollination.alias.inputs.wea import epw_input_timestep_annual_check
 from pollination.alias.inputs.north import north_input
 from pollination.alias.inputs.radiancepar import rad_par_annual_input, \
     daylight_thresholds_input
@@ -15,7 +17,6 @@ from pollination.alias.outputs.daylight import daylight_autonomy_results, \
     udi_upper_results, grid_metrics_results, en17037_summary, \
     daylight_hours
 
-from ._process_epw import AnnualDaylightEN17037ProcessEPW
 from ._postprocess import AnnualDaylightEN17037PostProcess
 
 
@@ -75,8 +76,10 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     )
 
     epw = Inputs.file(
-        description='EPW file.',
-        extensions=['epw']
+        description='EPW or Wea file. This must be an hourly weather file with annual '
+        'data.',
+        extensions=['epw', 'wea'],
+        alias=epw_input_timestep_annual_check
     )
 
     thresholds = Inputs.str(
@@ -95,43 +98,43 @@ class AnnualDaylightEN17037EntryPoint(DAG):
         extensions=['json'], optional=True, alias=grid_metrics_input
     )
 
-    @task(template=AnnualDaylightEN17037ProcessEPW)
-    def annual_metrics_en17037_process_epw(
+    @task(template=EPWtoDaylightHours)
+    def create_daylight_hours(
         self, epw=epw
     ):
         return [
             {
-                'from': AnnualDaylightEN17037ProcessEPW()._outputs.wea,
-                'to': 'wea.wea'
-            },
-            {
-                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours_csv,
+                'from': EPWtoDaylightHours()._outputs.daylight_hours_csv,
                 'to': 'daylight_hours.csv'
             },
             {
-                'from': AnnualDaylightEN17037ProcessEPW()._outputs.daylight_hours_json,
+                'from': EPWtoDaylightHours()._outputs.daylight_hours_json,
                 'to': 'daylight_hours.json'
+            },
+            {
+                'from': EPWtoDaylightHours()._outputs.daylight_hours_wea,
+                'to': 'wea.wea'
             }
         ]
 
     @task(
         template=TwoPhaseDaylightCoefficientEntryPoint,
-        needs=[annual_metrics_en17037_process_epw]
+        needs=[create_daylight_hours]
     )
     def run_two_phase_daylight_coefficient(
             self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
             radiance_parameters=radiance_parameters, grid_filter=grid_filter,
-            model=model, wea=annual_metrics_en17037_process_epw._outputs.wea
+            model=model, wea=create_daylight_hours._outputs.daylight_hours_wea
     ):
         pass
 
     @task(
         template=AnnualDaylightEN17037PostProcess,
-        needs=[annual_metrics_en17037_process_epw, run_two_phase_daylight_coefficient]
+        needs=[create_daylight_hours, run_two_phase_daylight_coefficient]
     )
     def annual_metrics_en17037_postprocess(
         self, results='results',
-        schedule=annual_metrics_en17037_process_epw._outputs.daylight_hours_csv,
+        schedule=create_daylight_hours._outputs.daylight_hours_csv,
         thresholds=thresholds, model=model, grid_metrics=grid_metrics
     ):
         return [
