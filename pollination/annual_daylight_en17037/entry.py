@@ -14,7 +14,7 @@ from pollination.alias.inputs.grid import grid_filter_input, \
 from pollination.alias.inputs.postprocess import grid_metrics_input
 from pollination.alias.outputs.daylight import daylight_autonomy_results, \
     continuous_daylight_autonomy_results, udi_results, udi_lower_results, \
-    udi_upper_results, grid_metrics_results, en17037_summary, \
+    udi_upper_results, grid_metrics_results, en17037_summary, en17037_summary_grid, \
     daylight_hours
 
 from ._postprocess import AnnualDaylightEN17037PostProcess
@@ -143,6 +143,14 @@ class AnnualDaylightEN17037EntryPoint(DAG):
                 'to': 'en17037'
             },
             {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.en17037_summary,
+                'to': 'en17037/summary.json'
+            },
+            {
+                'from': AnnualDaylightEN17037PostProcess()._outputs.en17037_summary_grid,
+                'to': 'en17037/summary_grid.json'
+            },
+            {
                 'from': AnnualDaylightEN17037PostProcess()._outputs.metrics,
                 'to': 'metrics'
             },
@@ -157,8 +165,15 @@ class AnnualDaylightEN17037EntryPoint(DAG):
     )
 
     summary = Outputs.file(
-        source='en17037/summary.json', description='Annual daylight EN17037 summary.',
+        source='en17037/summary.json',
+        description='Annual daylight EN17037 summary.',
         alias=en17037_summary
+    )
+
+    summary_grid = Outputs.file(
+        source='en17037/summary_grid.json',
+        description='Annual daylight EN17037 summary of each grid.',
+        alias=en17037_summary_grid
     )
 
     daylight_hours = Outputs.file(

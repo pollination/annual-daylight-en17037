@@ -53,6 +53,14 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
             {
                 'from': AnnualDaylightEn17037Metrics()._outputs.annual_en17037_metrics,
                 'to': 'en17037'
+            },
+            {
+                'from': AnnualDaylightEn17037Metrics()._outputs.summary,
+                'to': 'en17037/summary.json'
+            },
+            {
+                'from': AnnualDaylightEn17037Metrics()._outputs.summary_grid,
+                'to': 'en17037/summary_grid.json'
             }
         ]
 
@@ -85,6 +93,15 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
 
     en17037 = Outputs.folder(
         source='en17037', description='Annual daylight EN17037 metrics folder.'
+    )
+
+    en17037_summary = Outputs.file(
+        source='en17037/summary.json', description='Annual daylight EN17037 summary.',
+    )
+
+    en17037_summary_grid = Outputs.file(
+        source='en17037/summary_grid.json', description='Annual daylight EN17037 '
+        'summary of each grid.'
     )
 
     metrics = Outputs.folder(
