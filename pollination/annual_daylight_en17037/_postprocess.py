@@ -47,7 +47,7 @@ class AnnualDaylightEN17037PostProcess(GroupedDAG):
 
     @task(template=AnnualDaylightEn17037Metrics)
     def calculate_annual_metrics_en17037(
-        self, folder=results, schedule=schedule
+        self, folder=results, schedule=schedule, model=model
     ):
         return [
             {
